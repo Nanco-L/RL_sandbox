@@ -13,6 +13,14 @@ class FCN(tf.keras.Model):
         x = self.d1(x)
         x = self.d2(x)
         return self.d3(x)
+    
+class CNN(tf.keras.Model):
+    def __init__(self):
+        """
+        """
+        
+    def call(self, x):
+        return 0
 
 class DQNWrapper():
     def __init__(self, model):
