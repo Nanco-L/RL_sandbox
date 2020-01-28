@@ -33,5 +33,8 @@ def run_train():
 
     game.run(bot1, bot2)
 
-def test_train():
+#def test_train():
+#    run_train()
+
+if __name__=='__main__':
     run_train()

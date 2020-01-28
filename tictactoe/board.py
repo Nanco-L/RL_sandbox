@@ -6,7 +6,6 @@ class Board():
         self.board = None
         self.avail_actions = None
         self.reset_board()
-        self.get_avail_actions()
         
         self.turn = 0
         self.stale = False
@@ -15,9 +14,8 @@ class Board():
         self.mark = {2:' ', 0:'X', 1:'O'}
         
         self.current_player = 0
-        self.pickone_board = None
         
-        hori_line = "{}"+" | {}"*(self.size_of_board-1)+"\n"
+        hori_line = " {}"+" | {}"*(self.size_of_board-1)+"\n"
         split_line = "---"+"----"*(self.size_of_board-1)+"\n"
         self.board_tile = hori_line
         
@@ -25,7 +23,7 @@ class Board():
             self.board_tile += split_line + hori_line
         
     def reset_board(self):
-        self.board = np.array([2]*self.size_of_board*self.size_of_board, dtype=np.int8)
+        self.board = np.ones([self.size_of_board*self.size_of_board], dtype=np.int8)*2
         self.get_avail_actions()
     
     def get_avail_actions(self):
@@ -79,14 +77,10 @@ class Board():
                 if np.sum(item == self.current_player) == self.size_of_board:
                     return True
                 
-            if np.sum(self.board.reshape(
-                [self.size_of_board, self.size_of_board]
-            ).diagonal() == self.current_player) == self.size_of_board:
+            if np.sum(self.board.reshape([self.size_of_board, self.size_of_board]).diagonal() == self.current_player) == self.size_of_board:
                 return True
             
-            if np.sum(np.fliplr(self.board.reshape(
-                [self.size_of_board, self.size_of_board])
-            ).diagonal() == self.current_player) == self.size_of_board:
+            if np.sum(np.fliplr(self.board.reshape([self.size_of_board, self.size_of_board])).diagonal() == self.current_player) == self.size_of_board:
                 return True
             
         return False
