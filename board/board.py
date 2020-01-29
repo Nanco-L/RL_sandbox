@@ -30,7 +30,7 @@ class Board():
         self.playlog = list()
 
     def _reset_state(self):
-        self.state = np.full(2, [self.size_of_board*self.size_of_board], dtype=np.int8)
+        self.state = np.full([self.size_of_board*self.size_of_board], 2, dtype=np.int8)
         self._get_avail_actions()
 
     def _get_avail_actions(self):
@@ -56,6 +56,8 @@ class Board():
 
         self.turn = 1
         self.players = [player1, player2]
+        self.players[0].set_player_number(0)
+        self.players[1].set_player_number(1)
         self.current_player = 0
         self.current_move = None
         self.playlog = list()
@@ -63,28 +65,28 @@ class Board():
         while True:
             state = np.copy(self.state)
             action = self._update_state()
-            self.playlog.append([state, action, self.state])
+            self.playlog.append([state, action, np.copy(self.state)])
             if verbose:
                 print('===== Turn {} (Player {}) ====='.format(self.turn, self.current_player+1))
                 self._render()
             if self._check_winner():
                 if verbose:
                     print("Player {} win!".format(self.current_player+1))
-                self.players[self.current_player].save_result(1, self.playlog)
-                self.players[(self.current_player+1)%2].save_result(-1, self.playlog)
+                self.players[self.current_player].save_result(1, self.playlog[:])
+                self.players[(self.current_player+1)%2].save_result(-1, self.playlog[:])
                 break
             elif np.sum(self.avail_actions) == 0:
                 if verbose:
                     print("Draw!")
-                self.players[self.current_player].save_result(-0.5, self.playlog)
-                self.players[(self.current_player+1)%2].save_result(-0.5, self.playlog)
+                self.players[self.current_player].save_result(-0.5, self.playlog[:])
+                self.players[(self.current_player+1)%2].save_result(-0.5, self.playlog[:])
                 break
             self.current_player = (self.current_player + 1)%2
             self.turn += 1
 
 class Tictactoe(Board):
-    def __init__(self, size):
-        super().__init__(size)
+    def __init__(self):
+        super().__init__()
 
     def _check_winner(self):
         # use numpy
