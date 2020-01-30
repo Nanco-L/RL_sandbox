@@ -70,7 +70,7 @@ class DQNBot(Agent):
                 s = (s*2)%3 - 1
 
             if (i+1)%2 == self.player_number:
-                self.replay.append([s, a, result, s_])
+                self.replay.append([s.astype(np.float), a, result, s_.astype(np.float)])
                 s_ = s
 
             result *= self.decay_rate
