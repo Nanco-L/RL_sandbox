@@ -40,7 +40,7 @@ class Human(Agent):
 
 class DQNBot(Agent):
     def __init__(self, model):
-        super().__init__()
+        super(DQNBot, self).__init__()
         self.model = model
         self.replay = list()
         self.decay_rate = 0.9
@@ -59,13 +59,15 @@ class DQNBot(Agent):
 
     def save_result(self, result, playlog):
 
-        s_ = np.ones(playlog[-1][-1].shape)
+        s_ = None
         while playlog:
             i = len(playlog)
             s, a, _ = playlog.pop()
 
+            if self.player_number == 0:
+                s = (s+2)%3 - 1
             if self.player_number == 1:
-                s = ((s+2)*2)%3
+                s = (s*2)%3 - 1
 
             if (i+1)%2 == self.player_number:
                 self.replay.append([s, a, result, s_])
@@ -74,18 +76,22 @@ class DQNBot(Agent):
             result *= self.decay_rate
 
     def generate_dataset(self):
-        s = list()
-        a = list()
-        r = list()
-        s_ = list()
+        
+        state  = list()
+        action = list()
+        value  = list()
 
         for item in self.replay:
-            s.append(item[0])
-            a.append(item[1])
-            r.append(item[2])
-            s_.append(item[3])
+            state.append(item[0])
+            action.append(item[1])
+            if item[3] is None:
+                value.append(item[2])
+            else:
+                one_hot = np.zeros([9])
+                one_hot[item[1]] = 1
+                value.append(item[2] + np.sum(self.decay_rate*self.model.model(np.array([item[3]]))*one_hot))
 
-        self.train_ds = tf.data.Dataset.from_tensor_slices((s,a,r,s_)).shuffle(2000).batch(16)
+        self.train_ds = tf.data.Dataset.from_tensor_slices((state, action, value)).shuffle(2000).batch(16)
 
     def train(self):
         self.model.run()
