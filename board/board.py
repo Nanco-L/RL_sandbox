@@ -86,7 +86,7 @@ class Board():
 
 class Tictactoe(Board):
     def __init__(self):
-        super().__init__()
+        super(Tictactoe, self).__init__()
 
     def _check_winner(self):
         # use numpy
