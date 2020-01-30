@@ -5,6 +5,7 @@ class FCN(tf.keras.Model):
     def __init__(self, io, hidden):
         super(FCN, self).__init__()
         
+        self.io = io
         self.d1 = tf.keras.layers.Dense(hidden, activation='sigmoid')
         self.d2 = tf.keras.layers.Dense(hidden, activation='sigmoid')
         self.d3 = tf.keras.layers.Dense(io, activation='linear')
@@ -31,14 +32,15 @@ class DQNWrapper():
         self.train_loss = tf.keras.metrics.Mean(name='train_loss')
     
     @tf.function
-    def train_step(self, s, a, r, s_):
+    def train_step(self, state, action, value):
         with tf.GradientTape() as tape:
             # TODO: 
-            predictions = self.model(s)
+            predictions = self.model(state)
+            predictions *= tf.one_hot(action, self.model.io)
             
             #print(y)
             #print(predictions)
-            loss = self.loss_object(y, predictions)
+            loss = self.loss_object(value, tf.reduce_sum(predictions, axis=1))
             
         gradients = tape.gradient(loss, self.model.trainable_variables)
         self.optimizer.apply_gradients(zip(gradients, self.model.trainable_variables))
@@ -46,9 +48,9 @@ class DQNWrapper():
 
     def run(self, epochs, train_ds):
         for epoch in range(epochs):
-            for s, a, r, s_ in train_ds:
-                self.train_step(s, a, r, s_)
+            for state, action, value in train_ds:
+                self.train_step(state, action, value)
 
-            if epoch % 10:
+            if epoch % 10 == 0:
                 print(f'{self.train_loss.result()}')
 
