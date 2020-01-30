@@ -63,14 +63,16 @@ class DQNBot(Agent):
         while playlog:
             i = len(playlog)
             s, a, _ = playlog.pop()
-
+            
+            s = np.array(s)
             if self.player_number == 0:
                 s = (s+2)%3 - 1
-            if self.player_number == 1:
+            elif self.player_number == 1:
                 s = (s*2)%3 - 1
-
+            s = s.astype(np.float)
+                
             if (i+1)%2 == self.player_number:
-                self.replay.append([s.astype(np.float), a, result, s_.astype(np.float)])
+                self.replay.append([s, a, result, s_])
                 s_ = s
 
             result *= self.decay_rate
