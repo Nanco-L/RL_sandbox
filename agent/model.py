@@ -6,7 +6,7 @@ class FCN(tf.keras.Model):
         super(FCN, self).__init__()
         
         self.io = io
-        self.d1 = tf.keras.layers.Dense(hidden, activation='sigmoid')
+        self.d1 = tf.keras.layers.Dense(hidden, activation='sigmoid', input_shape=(io,))
         self.d2 = tf.keras.layers.Dense(hidden, activation='sigmoid')
         self.d3 = tf.keras.layers.Dense(io, activation='linear')
         self.train_loss = tf.keras.metrics.Mean()
@@ -28,7 +28,8 @@ class DQNWrapper():
     def __init__(self, model):
         self.model = model
         self.loss_object = tf.keras.losses.MeanSquaredError()
-        self.optimizer = tf.keras.optimizers.Adam()
+        #self.optimizer = tf.keras.optimizers.Adam()
+        self.optimizer = tf.keras.optimizers.SGD()
         self.train_loss = tf.keras.metrics.Mean(name='train_loss')
     
     @tf.function
@@ -38,8 +39,6 @@ class DQNWrapper():
             predictions = self.model(state)
             predictions *= tf.one_hot(action, self.model.io)
             
-            #print(y)
-            #print(predictions)
             loss = self.loss_object(value, tf.reduce_sum(predictions, axis=1))
             
         gradients = tape.gradient(loss, self.model.trainable_variables)
@@ -51,6 +50,18 @@ class DQNWrapper():
             for state, action, value in train_ds:
                 self.train_step(state, action, value)
 
-            if epoch % 10 == 0:
-                print(f'{self.train_loss.result()}')
+            if (epoch+1) % 100 == 0:
+                print(f'{epoch+1:5d} th epoch, Train loss: {self.train_loss.result():6.4f}')
+
+    def save(self):
+        #self.model.save('my_model', save_model='tf')
+        print(self.model)
+        self.model.save_weights('./my_checkpoint')
+
+    def load(self):
+        #self.model = tf.keras.load_model('my_model')
+        self.train_step(np.random.random([1,9]), np.random.random([1,1]).astype(np.int), np.random.random([1,1]))
+        self.model.load_weights('./my_checkpoint')
+        #print(self.model.d1.get_weights())
+        self.model.summary()
 
