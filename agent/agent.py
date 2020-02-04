@@ -38,6 +38,8 @@ class Human(Agent):
             
         return action-1
 
+# TODO: Need to make replay buffer
+
 class DQNBot(Agent):
     def __init__(self, model):
         super(DQNBot, self).__init__()
@@ -45,6 +47,7 @@ class DQNBot(Agent):
         #self.replay = list()
         self.decay_rate = 0.9
         self.exploration_rate = 1.
+        self.buffer_size = 1000
 
     def get_move(self, state, avail_action):
         if np.random.random() < self.exploration_rate:
@@ -60,16 +63,6 @@ class DQNBot(Agent):
 
             #print(state)
             values = self.model.model(np.array([state_fix])).numpy()[0][avail_action]
-            #print(values, avail_action)
-
-            #values = values[avail_action]
-            #print(values, np.arange(len(state))[avail_action])
-            
-            #, np.array(avail_action).astype(np.int), values * np.array(avail_action).astype(np.int))
-            
-            #values *= np.array(avail_action).astype(np.int)
-            #print(f'== argmax: {np.arange(len(state))[avail_action][np.argmax(values)]} ==')
-            #print(np.arange(len(state.reshape([-1])))[avail_action][np.argmax(values)])
             
             return np.arange(len(state))[avail_action][np.argmax(values)]
 
@@ -87,6 +80,8 @@ class DQNBot(Agent):
 
             if (i+1)%2 == self.player_number:
                 self.replay.append([s, a, result, s_])
+                if len(self.replay) > self.buffer_size:
+                    self.replay.pop(0)
                 s_ = s
 
             result *= self.decay_rate
@@ -119,7 +114,7 @@ class DQNBot(Agent):
                         one_hot[item[1]] = 1
                         value.append(item[2] + np.sum(self.decay_rate*self.model.model(np.array([item[3]]))*one_hot))
 
-        self.train_ds = tf.data.Dataset.from_tensor_slices((state, action, value)).shuffle(10000).batch(16)
+        return tf.data.Dataset.from_tensor_slices((state, action, np.array(value, dtype=np.float))) #.shuffle(10000).batch(16)
 
     def clear_replay(self):
         self.replay = list()

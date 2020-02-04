@@ -17,5 +17,5 @@ B2 = ag.DQNBot(dqn)
 B1.exploration_rate = 0.
 B2.exploration_rate = 0.
 
-#myboard.run(B1, H2, verbose=True)
+myboard.run(B1, H2, verbose=True)
 myboard.run(H1, B2, verbose=True)
