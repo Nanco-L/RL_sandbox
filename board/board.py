@@ -66,6 +66,7 @@ class Board():
             state = np.copy(self.state)
             action = self._update_state()
             self.playlog.append([state, action, np.copy(self.state)])
+            #print(self.playlog)
             if verbose:
                 print('===== Turn {} (Player {}) ====='.format(self.turn, self.current_player+1))
                 self._render()
