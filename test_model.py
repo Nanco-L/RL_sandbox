@@ -13,15 +13,34 @@ H2 = ag.Human()
 B1 = ag.DQNBot(dqn)
 B2 = ag.DQNBot(dqn)
 
-for i in range(1000):
-    myboard.run(B1, B2, verbose=False)
-    #print(len(B1.replay))
+#B1.exploration_rate -= 0.15
+#B2.exploration_rate -= 0.15
 
-B1.generate_dataset()
+for ii in range(20):
+    print(f'=== {ii+1:4d} th generation ===')
 
-dqn.run(2000, B1.train_ds)
+    for i in range(1000):
+        myboard.run(B1, B2, verbose=False)
+        #print(len(B1.replay))
+
+    B1.generate_dataset(others=[B2.replay])
+
+    dqn.run(100, B1.train_ds)
+
+    if B1.exploration_rate > 0.25:
+        B1.exploration_rate -= 0.15
+    if B2.exploration_rate > 0.25:
+        B2.exploration_rate -= 0.15
+
+    B1.clear_replay()
+    B2.clear_replay()
+
+B1.exploration_rate = 0.
+B2.exploration_rate = 0.
 
 myboard.run(B1, B2, verbose=True)
+
+dqn.save()
 
 """
 state  = np.random.random([10,9])
