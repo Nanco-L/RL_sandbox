@@ -3,7 +3,7 @@ import tensorflow as tf
 
 class Agent():
     def __init__(self):
-        self.result_log = list()
+        self.replay = list()
         self.player_number = 0
 
     def get_move(self):
@@ -15,7 +15,7 @@ class Agent():
         self.player_number = number
 
     def save_result(self, result, playlog):
-        self.result_log.append([playlog, result])
+        self.replay.append([playlog, result])
 
 class Human(Agent):
         
@@ -42,7 +42,7 @@ class DQNBot(Agent):
     def __init__(self, model):
         super(DQNBot, self).__init__()
         self.model = model
-        self.replay = list()
+        #self.replay = list()
         self.decay_rate = 0.9
         self.exploration_rate = 1.
 
@@ -53,9 +53,25 @@ class DQNBot(Agent):
     
             return action_list[0]
         else:
-            values = self.model.model(state)
-        
-            return np.argmax(values[avail_action])
+            if self.player_number == 0:
+                state_fix = (np.copy(state)+2)%3 - 1
+            elif self.player_number == 1:
+                state_fix = (np.copy(state)*2)%3 - 1
+
+            #print(state)
+            values = self.model.model(np.array([state_fix])).numpy()[0][avail_action]
+            #print(values, avail_action)
+
+            #values = values[avail_action]
+            #print(values, np.arange(len(state))[avail_action])
+            
+            #, np.array(avail_action).astype(np.int), values * np.array(avail_action).astype(np.int))
+            
+            #values *= np.array(avail_action).astype(np.int)
+            #print(f'== argmax: {np.arange(len(state))[avail_action][np.argmax(values)]} ==')
+            #print(np.arange(len(state.reshape([-1])))[avail_action][np.argmax(values)])
+            
+            return np.arange(len(state))[avail_action][np.argmax(values)]
 
     def save_result(self, result, playlog):
 
@@ -63,21 +79,19 @@ class DQNBot(Agent):
         while playlog:
             i = len(playlog)
             s, a, _ = playlog.pop()
-            
-            s = np.array(s)
+
             if self.player_number == 0:
                 s = (s+2)%3 - 1
             elif self.player_number == 1:
                 s = (s*2)%3 - 1
-            s = s.astype(np.float)
-                
+
             if (i+1)%2 == self.player_number:
                 self.replay.append([s, a, result, s_])
                 s_ = s
 
             result *= self.decay_rate
 
-    def generate_dataset(self):
+    def generate_dataset(self, others=None):
         
         state  = list()
         action = list()
@@ -93,7 +107,22 @@ class DQNBot(Agent):
                 one_hot[item[1]] = 1
                 value.append(item[2] + np.sum(self.decay_rate*self.model.model(np.array([item[3]]))*one_hot))
 
-        self.train_ds = tf.data.Dataset.from_tensor_slices((state, action, value)).shuffle(2000).batch(16)
+        if others is not None:
+            for otem in others:
+                for item in otem:
+                    state.append(item[0])
+                    action.append(item[1])
+                    if item[3] is None:
+                        value.append(item[2])
+                    else:
+                        one_hot = np.zeros([9])
+                        one_hot[item[1]] = 1
+                        value.append(item[2] + np.sum(self.decay_rate*self.model.model(np.array([item[3]]))*one_hot))
+
+        self.train_ds = tf.data.Dataset.from_tensor_slices((state, action, value)).shuffle(10000).batch(16)
+
+    def clear_replay(self):
+        self.replay = list()
 
     def train(self):
         self.model.run()
