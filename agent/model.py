@@ -29,7 +29,8 @@ class DQNWrapper():
     def __init__(self, model):
         self.model = model
         self.loss_object = tf.keras.losses.MeanSquaredError()
-        self.optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001)
+        #self.optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001)
+        self.optimizer = tf.keras.optimizers.RMSprop(learning_rate=0.0001)
         #self.optimizer = tf.keras.optimizers.SGD()
         self.train_loss = tf.keras.metrics.Mean(name='train_loss')
     
@@ -39,7 +40,6 @@ class DQNWrapper():
             # TODO: 
             predictions = self.model(state)
             predictions *= tf.one_hot(action, self.model.io)
-            
             # FIXME: Check the loss -> is it correct?
             loss = self.loss_object(value, tf.reduce_sum(predictions, axis=1))
             
