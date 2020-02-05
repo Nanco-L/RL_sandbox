@@ -62,9 +62,11 @@ class DQNBot(Agent):
                 state_fix = (np.copy(state)*2)%3 - 1
 
             #print(state)
+            #print(self.model.model(np.array([state_fix])).numpy()[0])
             values = self.model.model(np.array([state_fix])).numpy()[0][avail_action]
             
             return np.arange(len(state))[avail_action][np.argmax(values)]
+            #return np.arange(len(state))[avail_action][np.argmin(values)]
 
     def save_result(self, result, playlog):
 
@@ -79,14 +81,21 @@ class DQNBot(Agent):
                 s = (s*2)%3 - 1
 
             if (i+1)%2 == self.player_number:
-                self.replay.append([s, a, result, s_])
+                # TODO: value calculation
+                
+                if s_ is None:
+                    v = result
+                else:
+                    v = result + self.decay_rate*self.model.model(np.array([s_])).numpy()[0,a]
+
+                self.replay.append([s, a, result, s_, v])
                 if len(self.replay) > self.buffer_size:
                     self.replay.pop(0)
-                s_ = s
-
+                #s_ = s
+            s_ = s
             result *= self.decay_rate
 
-    def generate_dataset(self, others=None):
+    def generate_dataset(self):
         
         state  = list()
         action = list()
@@ -95,24 +104,16 @@ class DQNBot(Agent):
         for item in self.replay:
             state.append(item[0])
             action.append(item[1])
+            value.append(item[4])
+            
+            """
             if item[3] is None:
                 value.append(item[2])
             else:
                 one_hot = np.zeros([9])
                 one_hot[item[1]] = 1
                 value.append(item[2] + np.sum(self.decay_rate*self.model.model(np.array([item[3]]))*one_hot))
-
-        if others is not None:
-            for otem in others:
-                for item in otem:
-                    state.append(item[0])
-                    action.append(item[1])
-                    if item[3] is None:
-                        value.append(item[2])
-                    else:
-                        one_hot = np.zeros([9])
-                        one_hot[item[1]] = 1
-                        value.append(item[2] + np.sum(self.decay_rate*self.model.model(np.array([item[3]]))*one_hot))
+            """
 
         return tf.data.Dataset.from_tensor_slices((state, action, np.array(value, dtype=np.float))) #.shuffle(10000).batch(16)
 
