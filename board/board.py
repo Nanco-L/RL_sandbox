@@ -79,8 +79,9 @@ class Board():
             elif np.sum(self.avail_actions) == 0:
                 if verbose:
                     print("Draw!")
-                self.players[self.current_player].save_result(-0.5, self.playlog[:])
-                self.players[(self.current_player+1)%2].save_result(-0.5, self.playlog[:])
+                # TODO: check result for draw (if it is set -0.5, value cannot be converged..)
+                self.players[self.current_player].save_result(0., self.playlog[:])
+                self.players[(self.current_player+1)%2].save_result(0., self.playlog[:])
                 break
             self.current_player = (self.current_player + 1)%2
             self.turn += 1
