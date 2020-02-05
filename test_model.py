@@ -13,8 +13,9 @@ H2 = ag.Human()
 B1 = ag.DQNBot(dqn)
 B2 = ag.DQNBot(dqn)
 
-#B1.exploration_rate -= 0.15
-#B2.exploration_rate -= 0.15
+B1.exploration_rate = 0.9
+B2.exploration_rate = 0.9
+
 global_epoch = 0
 for ii in range(1000):
     #print(f'=== {ii+1:4d} th generation ===')
@@ -29,11 +30,11 @@ for ii in range(1000):
     global_epoch = dqn.run(50, tset1.concatenate(tset2).shuffle(10000).batch(16), global_epoch)
 
     if (ii+1)%10 == 0:
-        if B1.exploration_rate > 0.25:
-            B1.exploration_rate -= 0.15
-        if B2.exploration_rate > 0.25:
-            B2.exploration_rate -= 0.15
-
+        #if B1.exploration_rate > 0.25:
+        #    B1.exploration_rate -= 0.15
+        #if B2.exploration_rate > 0.25: 
+        #    B2.exploration_rate -= 0.15
+        print(f'{dqn.model(np.array([[1.,-1.,-1.,1.,1.,-1.,-1.,1.,0.]]))}, {np.sum(dqn.model(np.array([[1.,-1.,-1.,1.,1.,-1.,-1.,1.,0.]])).numpy())}')
         dqn.save()
 
     #B1.clear_replay()
