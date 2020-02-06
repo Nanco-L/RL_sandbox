@@ -7,9 +7,9 @@ class FCN(tf.keras.Model):
         super(FCN, self).__init__()
         
         self.io = io
-        self.d1 = tf.keras.layers.Dense(hidden, activation='sigmoid', input_shape=(io,))
-        self.d2 = tf.keras.layers.Dense(hidden, activation='sigmoid')
-        self.d3 = tf.keras.layers.Dense(io, activation='linear')
+        self.d1 = tf.keras.layers.Dense(hidden, activation='tanh', input_shape=(io,))
+        self.d2 = tf.keras.layers.Dense(hidden, activation='tanh')
+        self.d3 = tf.keras.layers.Dense(io, activation='tanh')
         self.train_loss = tf.keras.metrics.Mean()
         
     def call(self, x):
@@ -41,7 +41,8 @@ class DQNWrapper():
             predictions = self.model(state)
             predictions *= tf.one_hot(action, self.model.io)
             # FIXME: Check the loss -> is it correct?
-            loss = self.loss_object(value, tf.reduce_sum(predictions, axis=1))
+            #loss = self.loss_object(value, tf.reduce_sum(predictions, axis=1))
+            loss = self.loss_object(tf.reshape(value, [-1,1])*tf.one_hot(action, self.model.io, dtype=tf.float64), predictions)
             
         gradients = tape.gradient(loss, self.model.trainable_variables)
         self.optimizer.apply_gradients(zip(gradients, self.model.trainable_variables))
@@ -53,7 +54,7 @@ class DQNWrapper():
             for state, action, value in train_ds:
                 self.train_step(state, action, value)
 
-            if (epoch+1) % 50 == 0:
+            if (global_epoch+epoch+1) % 50 == 0:
                 time2 = timeit.default_timer()
                 print(f'{epoch+global_epoch+1:6d} th epoch, Train loss: {self.train_loss.result():6.4f}, Elipsed: {time2 - time1:6.4f}')
                 time1 = time2
