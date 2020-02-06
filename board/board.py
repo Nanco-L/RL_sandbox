@@ -65,7 +65,7 @@ class Board():
         while True:
             state = np.copy(self.state)
             action = self._update_state()
-            self.playlog.append([state, action, np.copy(self.state)])
+            self.playlog.append([state, action, np.copy(self.state), np.copy(self.avail_actions)])
             #print(self.playlog)
             if verbose:
                 print('===== Turn {} (Player {}) ====='.format(self.turn, self.current_player+1))
@@ -73,8 +73,12 @@ class Board():
             if self._check_winner():
                 if verbose:
                     print("Player {} win!".format(self.current_player+1))
-                self.players[self.current_player].save_result(1, self.playlog[:])
-                self.players[(self.current_player+1)%2].save_result(-1, self.playlog[:])
+                if self.current_player == 0:
+                    result = 1
+                else:
+                    result = -1
+                self.players[self.current_player].save_result(result, self.playlog[:])
+                self.players[(self.current_player+1)%2].save_result(result, self.playlog[:])
                 break
             elif np.sum(self.avail_actions) == 0:
                 if verbose:
@@ -116,3 +120,15 @@ class Tictactoe(Board):
                 return True
             
         return False
+
+class Omok(Board):
+    def __init__(self, size=10):
+        super(Omok, self).__init__(size=size)
+
+    def _check_winner(self):
+        self.pickup_board = self.state == self.current_player
+        if (np.sum(self.pickup_board)) < self.size_of_board:
+            return False
+        else:
+            return True
+
