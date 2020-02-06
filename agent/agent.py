@@ -56,44 +56,76 @@ class DQNBot(Agent):
     
             return action_list[0]
         else:
-            if self.player_number == 0:
-                state_fix = (np.copy(state)+2)%3 - 1
-            elif self.player_number == 1:
-                state_fix = (np.copy(state)*2)%3 - 1
+            state_fix = (np.copy(state)+2)%3 - 1
 
             #print(state)
             #print(self.model.model(np.array([state_fix])).numpy()[0])
             values = self.model.model(np.array([state_fix])).numpy()[0][avail_action]
-            
-            return np.arange(len(state))[avail_action][np.argmax(values)]
-            #return np.arange(len(state))[avail_action][np.argmin(values)]
+                        
+            if self.player_number == 0:
+                return np.arange(len(state))[avail_action][np.argmax(values)]
+            else:
+                return np.arange(len(state))[avail_action][np.argmin(values)]
 
     def save_result(self, result, playlog):
 
-        s_ = None
+        #s_ = None
+        max_len = len(playlog)
         while playlog:
             i = len(playlog)
-            s, a, _ = playlog.pop()
+            s, a, s_, avail_action = playlog.pop()
 
-            if self.player_number == 0:
-                s = (s+2)%3 - 1
-            elif self.player_number == 1:
-                s = (s*2)%3 - 1
+            s = (s+2)%3 - 1
+            s_ = (s_+2)%3 - 1
 
-            if (i+1)%2 == self.player_number:
-                # TODO: value calculation
-                
-                if s_ is None:
-                    v = result
+            if max_len == i:
+                q = result
+            else:
+                if i%2 == 0:
+                    q = np.max(self.model.model(np.array([s_])).numpy()[0][avail_action])
                 else:
-                    v = result + self.decay_rate*self.model.model(np.array([s_])).numpy()[0,a]
+                    q = np.min(self.model.model(np.array([s_])).numpy()[0][avail_action])
 
-                self.replay.append([s, a, result, s_, v])
-                if len(self.replay) > self.buffer_size:
-                    self.replay.pop(0)
-                #s_ = s
-            s_ = s
-            result *= self.decay_rate
+            self.replay.append([s, a, result, s_, q])
+            if len(self.replay) > self.buffer_size:
+                self.replay.pop(0)
+        
+        """
+        s, a, s_, avail_action = playlog.pop()
+
+        s = (s+2)%3 - 1
+        s_ = (s_+2)%3 - 1
+
+        q = result
+        self.replay.append([s, a, result, s_, q])
+        if len(self.replay) > self.buffer_size:
+            self.replay.pop(0)
+
+        while playlog:
+            #i = len(playlog)
+            s, a, s_, avail_action = playlog.pop()
+
+            s = (s+2)%3 - 1
+            s_ = (s_+2)%3 - 1
+
+            #if (i+1)%2 == self.player_number:
+            # TODO: value calculation
+            
+            #if np.sum(avail_action) == 1:
+            #    q = result
+            #else:
+                #v = result + self.decay_rate*self.model.model(np.array([s_]).numpy()[0,a]
+                #v = result + self.decay_rate*np.max(self.model.model(np.array([s_]).numpy()))#[0,a]
+                #v = result - self.decay_rate*np.max(self.model.model(np.array([s_])).numpy())
+            
+            q = self.decay_rate * np.max(self.model.model(np.array([s_])).numpy()[0][avail_action]) # avail_action
+
+            self.replay.append([s, a, result, s_, q])
+            if len(self.replay) > self.buffer_size:
+                self.replay.pop(0)
+            #s_ = s
+        """
+            
 
     def generate_dataset(self):
         
