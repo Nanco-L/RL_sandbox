@@ -82,9 +82,9 @@ class DQNBot(Agent):
                 q = result
             else:
                 if i%2 == 0:
-                    q = np.max(self.model.model(np.array([s_])).numpy()[0][avail_action])
-                else:
                     q = np.min(self.model.model(np.array([s_])).numpy()[0][avail_action])
+                else:
+                    q = np.max(self.model.model(np.array([s_])).numpy()[0][avail_action])
 
             self.replay.append([s, a, result, s_, q])
             if len(self.replay) > self.buffer_size:
