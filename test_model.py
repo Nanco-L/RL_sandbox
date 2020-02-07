@@ -4,8 +4,9 @@ import agent.model as am
 import board.board as bd
 import agent.agent as ag
 
-fc = am.FCN(9,30)
-dqn = am.DQNWrapper(fc)
+fc1 = am.FCN(9,100)
+fc2 = am.FCN(9,100)
+dqn = am.DQNWrapper(fc1, fc2)
 
 myboard = bd.Tictactoe()
 H1 = ag.Human()
@@ -13,14 +14,14 @@ H2 = ag.Human()
 B1 = ag.DQNBot(dqn)
 B2 = ag.DQNBot(dqn)
 
-B1.exploration_rate = 0.9
-B2.exploration_rate = 0.9
+B1.exploration_rate = 1.
+B2.exploration_rate = 1.
 
 global_epoch = 0
 for ii in range(1000):
     #print(f'=== {ii+1:4d} th generation ===')
 
-    for i in range(5):
+    for i in range(1):
         myboard.run(B1, B2, verbose=False)
         #print(len(B1.replay))
 
@@ -28,18 +29,22 @@ for ii in range(1000):
     tset2 = B2.generate_dataset()
 
     #global_epoch = dqn.run(50, tset1.concatenate(tset2).shuffle(10000).batch(16), global_epoch)
-    global_epoch = dqn.run(5, tset1.shuffle(10000).batch(16), global_epoch)
+    global_epoch = dqn.run(10, tset1.shuffle(10000).batch(16), global_epoch)
+
+    B1.exploration_rate -= 0.001
+    B2.exploration_rate -= 0.001
 
     if (ii+1)%50 == 0:
-        if B1.exploration_rate > 0.1:
-            B1.exploration_rate -= 0.2
-            print(f'exploration_rate: {B1.exploration_rate}')
-        if B2.exploration_rate > 0.1: 
-            B2.exploration_rate -= 0.2
-        print(f'{dqn.model(np.array([[1.,-1.,-1.,1.,1.,-1.,-1.,1.,0.]]))}, {np.sum(dqn.model(np.array([[1.,-1.,-1.,1.,1.,-1.,-1.,1.,0.]])).numpy())}')
-        print(f'{dqn.model(np.array([[0.,-1.,-1.,0.,0.,1.,0.,0.,1.]]))}, {np.sum(dqn.model(np.array([[0.,-1.,-1.,0.,0.,1.,0.,0.,1.]])).numpy())}')
+        #if B1.exploration_rate > 0.1:
+        #    B1.exploration_rate -= 0.2
+        print(f'exploration_rate: {B1.exploration_rate}')
+        #if B2.exploration_rate > 0.1: 
+        #    B2.exploration_rate -= 0.2
+        print(f'{dqn.e_model(np.array([[1.,-1.,-1.,1.,1.,-1.,-1.,1.,0.]]))}, {np.sum(dqn.e_model(np.array([[1.,-1.,-1.,1.,1.,-1.,-1.,1.,0.]])).numpy())}')
+        print(f'{dqn.e_model(np.array([[0.,-1.,-1.,0.,0.,1.,0.,0.,1.]]))}, {np.sum(dqn.e_model(np.array([[0.,-1.,-1.,0.,0.,1.,0.,0.,1.]])).numpy())}')
         dqn.save()
 
+    dqn.apply_networks()
     #B1.clear_replay()
     #B2.clear_replay()
 
