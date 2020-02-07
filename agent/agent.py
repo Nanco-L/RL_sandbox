@@ -60,7 +60,7 @@ class DQNBot(Agent):
 
             #print(state)
             #print(self.model.model(np.array([state_fix])).numpy()[0])
-            values = self.model.model(np.array([state_fix])).numpy()[0][avail_action]
+            values = self.model.e_model(np.array([state_fix])).numpy()[0][avail_action]
                         
             if self.player_number == 0:
                 return np.arange(len(state))[avail_action][np.argmax(values)]
@@ -71,8 +71,8 @@ class DQNBot(Agent):
 
         #s_ = None
         max_len = len(playlog)
+        i = len(playlog)
         while playlog:
-            i = len(playlog)
             s, a, s_, avail_action = playlog.pop()
 
             s = (s+2)%3 - 1
@@ -81,14 +81,17 @@ class DQNBot(Agent):
             if max_len == i:
                 q = result
             else:
-                if i%2 == 0:
-                    q = np.min(self.model.model(np.array([s_])).numpy()[0][avail_action])
-                else:
-                    q = np.max(self.model.model(np.array([s_])).numpy()[0][avail_action])
+                q = self.decay_rate*np.max(self.model.e_model(np.array([s_])).numpy()[0][avail_action])
+                #if i%2 == 0:
+                #    q = self.decay_rate*np.max(self.model.model(np.array([s_])).numpy()[0][avail_action])
+                #else:
+                #    q = self.decay_rate*np.min(self.model.model(np.array([s_])).numpy()[0][avail_action])
 
             self.replay.append([s, a, result, s_, q])
             if len(self.replay) > self.buffer_size:
                 self.replay.pop(0)
+
+            i = len(playlog)
         
         """
         s, a, s_, avail_action = playlog.pop()
@@ -156,3 +159,51 @@ class DQNBot(Agent):
         self.model.run()
 
         
+class QNBot(Agent):
+    def __init__(self):
+        super(QNBot, self).__init__()
+        self.q_dict = dict()
+        self.exploration_rate = 1.
+
+    def get_move(self, state, avail_action):
+        action_list = np.arange(avail_action.shape[0])[avail_action]
+        np.random.shuffle(action_list)
+
+        if np.random.random() < self.exploration_rate:
+            return action_list[0]
+        else:
+            state_pack = ''.join([str(item) for item in state])
+            q_val = self.q_dict.get(state_pack, [])
+
+            if len(q_val) == 0:
+                return action_list[0]
+            else:
+                if self.player_number == 0:
+                    return np.arange(len(state))[avail_action][np.argmax(q_val[avail_action])]
+                else:
+                    return np.arange(len(state))[avail_action][np.argmin(q_val[avail_action])]
+
+    def save_result(self, result, playlog):
+        max_len = len(playlog)
+        i = len(playlog)
+        while playlog:
+            s, a, s_, avail_action = playlog.pop()
+
+            state_pack = ''.join([str(item) for item in s])
+            state_pack_ = ''.join([str(item) for item in s_])
+
+            if state_pack not in self.q_dict.keys():
+                self.q_dict[state_pack] = np.zeros(s.shape)
+
+            #q_val = self.q_dict[state_pack]
+
+            if max_len == i:
+                q = result
+            else:
+                q = 0.9*np.max(self.q_dict.get(state_pack_, np.zeros([len(s)]))[avail_action])
+
+            
+            self.q_dict[state_pack][a] = q
+
+            i = len(playlog)
+            
